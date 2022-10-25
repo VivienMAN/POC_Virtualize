@@ -1,0 +1,99 @@
+﻿@page "/counter"
+@using BlazorApp5.Data
+@using Blazorise.DataGrid
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+@*
+<DataGrid TItem="User"
+          Data="@employeeList"
+          @bind-SelectedRow="@selectedEmployee"
+          Responsive
+          Virtualize
+          ReadData="OnReadData"
+          VirtualizeOptions="virtualizeOptions"
+          TotalItems="totalEmployees">
+    <DataGridCommandColumn />
+    <DataGridColumn Field="@nameof(User.Id)" Caption="#" Sortable="false" />
+
+    <DataGridColumn Field="@nameof(User.SomethingUnique)" Caption="#" Sortable="false">
+
+        <DisplayTemplate>
+            @{
+                var date = (context as User);
+
+                if (date != null)
+                {
+                    <Card>
+                        <CardHeader>
+                            @date.UserName
+                        </CardHeader>
+                        <CardImage Style="height:500px;" Source="@(date.imageBase64)" Alt="Placeholder image">
+                        </CardImage>
+                    </Card>
+                }
+            }
+        </DisplayTemplate>
+
+    </DataGridColumn>
+
+
+</DataGrid>*@
+
+<Div>
+    <Virtualize ItemSize="500" Context="employee" ItemsProvider="@LoadEmployees">
+        <p style="height:500px">
+            s
+            @employee.FirstName @employee.LastName sshas thdseddss
+            job title of @employee.Id
+            <img src="@employee.imageBase64" />
+        </p>
+    </Virtualize>
+</Div>
+
+
+@code {
+    private IEnumerable<User> employeeList;
+    private User selectedEmployee;
+    int totalEmployees = 100;
+    private VirtualizeOptions virtualizeOptions;
+
+
+    private async ValueTask<ItemsProviderResult<User>> LoadEmployees(
+    ItemsProviderRequest request)
+    {
+        var numEmployees = Math.Min(request.Count, totalEmployees - request.StartIndex);
+        var employees = User.getUsers(numEmployees, request.StartIndex);
+        Console.WriteLine("Requete " + request.StartIndex + "  <=> " + (request.StartIndex + numEmployees));
+
+        return new ItemsProviderResult<User>(employees, totalEmployees);
+    }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        virtualizeOptions = new()
+            {
+                DataGridHeight = "700px",
+                DataGridMaxHeight = "700px",
+                OverscanCount = 7
+            };
+
+        await base.OnInitializedAsync();
+    }
+    private async Task OnReadData(DataGridReadDataEventArgs<User> e)
+    {
+        if (!e.CancellationToken.IsCancellationRequested)
+        {
+            IEnumerable<User> response = User.getUsers(e.VirtualizeCount, e.VirtualizeOffset);
+            Console.WriteLine("Requete " + e.VirtualizeOffset + "  <=> " + (e.VirtualizeOffset + e.VirtualizeCount));
+            if (!e.CancellationToken.IsCancellationRequested)
+            {
+                employeeList = response;
+                totalEmployees = 100;
+            }
+        }
+    }
+}
